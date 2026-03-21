@@ -403,8 +403,9 @@ async function migrationStatementAlreadyApplied(
 
   const alterColumnMatch = normalized.match(/^ALTER TABLE "([^"]+)" ALTER COLUMN "([^"]+)"/i);
   if (alterColumnMatch) {
-    // If the column exists the ALTER COLUMN was already applied (we can't cheaply verify the exact effect).
-    return columnExists(sql, alterColumnMatch[1], alterColumnMatch[2]);
+    // Can't cheaply verify the exact effect (SET NOT NULL, SET DEFAULT, etc.),
+    // so always re-attempt — most ALTER COLUMN ops are idempotent or produce benign errors.
+    return false;
   }
 
   const dropIndexMatch = normalized.match(/^DROP INDEX(?: IF EXISTS)? "([^"]+)"/i);

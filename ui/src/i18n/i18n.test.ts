@@ -1,69 +1,25 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { detectLanguage } from "./config";
 
-// Mock localStorage for the tests
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
+function makeStorage(entries: Record<string, string> = {}) {
+  return { getItem: (key: string) => entries[key] ?? null };
+}
 
-// Mock navigator for language detection
-const navigatorMock = { language: "en-US" };
-
-describe("i18n config", () => {
-  beforeEach(() => {
-    localStorageMock.clear();
-    Object.defineProperty(global, "localStorage", { value: localStorageMock, writable: true });
-    Object.defineProperty(global, "navigator", { value: navigatorMock, writable: true, configurable: true });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
+describe("detectLanguage", () => {
   it("detects English from navigator when no stored preference", () => {
-    navigatorMock.language = "en-US";
-    localStorageMock.clear();
-    // Since we can't easily re-run detectLanguage without re-importing,
-    // we test the logic directly by simulating it
-    const stored = localStorageMock.getItem("paperclip.language");
-    expect(stored).toBeNull();
-    const lang = navigator.language;
-    const detected = lang.startsWith("pt") ? "pt-BR" : "en";
-    expect(detected).toBe("en");
+    expect(detectLanguage(makeStorage(), { language: "en-US" })).toBe("en");
   });
 
   it("detects pt-BR from navigator when browser language is Portuguese", () => {
-    navigatorMock.language = "pt-BR";
-    const lang = navigator.language;
-    const detected = lang.startsWith("pt") ? "pt-BR" : "en";
-    expect(detected).toBe("pt-BR");
+    expect(detectLanguage(makeStorage(), { language: "pt-BR" })).toBe("pt-BR");
   });
 
   it("uses stored language preference over browser language", () => {
-    navigatorMock.language = "pt-BR";
-    localStorageMock.setItem("paperclip.language", "en");
-    const stored = localStorageMock.getItem("paperclip.language");
-    const detected = (stored === "en" || stored === "pt-BR") ? stored : (navigator.language.startsWith("pt") ? "pt-BR" : "en");
-    expect(detected).toBe("en");
+    expect(detectLanguage(makeStorage({ "paperclip.language": "en" }), { language: "pt-BR" })).toBe("en");
   });
 
   it("falls back to English for unsupported stored language", () => {
-    localStorageMock.setItem("paperclip.language", "fr");
-    const stored = localStorageMock.getItem("paperclip.language");
-    const isValid = stored === "en" || stored === "pt-BR";
-    const detected = isValid ? stored : "en";
-    expect(detected).toBe("en");
+    expect(detectLanguage(makeStorage({ "paperclip.language": "fr" }), { language: "en-US" })).toBe("en");
   });
 });
 

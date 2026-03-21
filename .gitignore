@@ -36,6 +36,7 @@ tmp/
 *.tmp
 .vscode/
 .claude/settings.local.json
+.claude/*.local.md
 .paperclip-local/
 /.idea/
 /.agents/

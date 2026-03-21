@@ -10,15 +10,19 @@ export const SUPPORTED_LANGUAGES: { value: SupportedLanguage; label: string }[] 
   { value: "pt-BR", label: "Português (Brasil)" },
 ];
 
-function detectLanguage(): SupportedLanguage {
+export function detectLanguage(
+  storage?: { getItem(key: string): string | null },
+  nav?: { language: string },
+): SupportedLanguage {
   try {
-    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    const s = storage ?? (typeof localStorage !== "undefined" ? localStorage : undefined);
+    const stored = s?.getItem(LANGUAGE_STORAGE_KEY);
     if (stored === "en" || stored === "pt-BR") return stored;
   } catch {
     // Ignore localStorage errors.
   }
-  const browserLang = navigator.language;
-  if (browserLang.startsWith("pt")) return "pt-BR";
+  const n = nav ?? (typeof navigator !== "undefined" ? navigator : undefined);
+  if (n?.language.startsWith("pt")) return "pt-BR";
   return "en";
 }
 
